@@ -1,0 +1,8 @@
+:root{--g:#14532d;--gs:#e6f1ea;--line:#e4e8e5;--m:#5d6b63}
+*{box-sizing:border-box}body{margin:0;font:15px/1.55 system-ui,sans-serif;color:#14201a;background:#fff}
+main{max-width:860px;margin:0 auto;padding:32px 18px 64px}h1{font-size:34px;margin:0 0 4px}h2{font-size:18px;margin:0 0 10px}
+.m,small{color:var(--m)}.card{border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}
+button,label.b{display:inline-block;background:var(--g);color:#fff;border:0;border-radius:999px;padding:9px 16px;font:600 14px system-ui;cursor:pointer;margin:0 8px 8px 0}
+button:disabled{opacity:.5}input[type=text],input[type=number]{font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stats{display:flex;flex-wrap:wrap;gap:14px;margin:6px 0}.stats span{display:flex;flex-direction:column}.err{background:#fef2f2;color:#991b1b;border-radius:12px;padding:10px 14px}
+.note{background:var(--gs);color:var(--g);border-radius:12px;padding:10px 14px;font-size:13px}
