@@ -1,6 +1,5 @@
 # NutriScan AI (full app)
 1. `npm install`
-2. `cp .env.example .env.local` and fill in `OPENAI_API_KEY` and `FDC_API_KEY` (free: https://fdc.nal.usda.gov/api-key-signup)
-3. `npm run dev` then open http://localhost:3000
-Deploy: push to GitHub, import in Vercel, add the same env vars. Keys stay server-side.
+2. For Netlify, configure `FDC_API_KEY` in the Functions scope for USDA barcode lookup (free: https://fdc.nal.usda.gov/api-key-signup). Food photos and label reading use Netlify AI Gateway automatically.
+3. Use `netlify dev` for the linked Netlify environment, or run `npm run dev` with your own server-side credentials in `.env.local`.
 Not included yet: Supabase accounts/history, AI assistant chat, vitamins/minerals.

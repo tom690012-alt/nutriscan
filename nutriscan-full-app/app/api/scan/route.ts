@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchCnf, getCnfFood } from "@/lib/cnf";
 import { searchFdc } from "@/lib/fdc";
 import { scale, sum, Nutrition } from "@/lib/nutrition";
+import { analyzeImage, readScanImage } from "@/lib/vision";
 
 export const maxDuration = 60;
-const MAX_BYTES = 8 * 1024 * 1024;
 
 const schema = {
   type: "object",
@@ -29,25 +29,15 @@ const schema = {
   },
 };
 
-async function detect(dataUrl: string) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o",
-      response_format: { type: "json_schema", json_schema: { name: "food_scan", strict: true, schema } },
-      messages: [
-        { role: "system", content: "You identify foods in photos for a nutrition app. List each distinct food or drink separately and estimate its portion weight in grams from visual cues (plate size, utensils, packaging). Do not estimate calories or nutrients. If the image has no food, set is_food to false and items to []." },
-        { role: "user", content: [{ type: "text", text: "What foods are in this photo?" }, { type: "image_url", image_url: { url: dataUrl } }] },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`OpenAI ${res.status}`);
-  const data = await res.json();
-  return JSON.parse(data.choices[0].message.content) as {
-    is_food: boolean;
-    items: { name: string; search_term: string; grams: number; confidence: string }[];
-  };
+type DetectedFood = {
+  is_food: boolean;
+  items: { name: string; search_term: string; grams: number; confidence: string }[];
+};
+
+function detect(dataUrl: string) {
+  return analyzeImage<DetectedFood>(dataUrl, "food_scan", schema,
+    "You identify foods in photos for a nutrition app. List each distinct food or drink separately and estimate its portion weight in grams from visual cues (plate size, utensils, packaging). Do not estimate calories or nutrients. If the image has no food, set is_food to false and items to [].",
+    "What foods are in this photo?");
 }
 
 // Canadian Nutrient File first, then USDA as a fallback.
@@ -60,15 +50,10 @@ async function match(term: string): Promise<Nutrition | null> {
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.OPENAI_API_KEY) return NextResponse.json({ error: "Scanner isn’t configured yet." }, { status: 500 });
-  const file = (await req.formData()).get("image");
-  if (!(file instanceof File) || !file.type.startsWith("image/"))
-    return NextResponse.json({ error: "Please upload an image (JPG, PNG or WebP)." }, { status: 400 });
-  if (file.size > MAX_BYTES) return NextResponse.json({ error: "That image is over 8 MB. Please use a smaller one." }, { status: 413 });
-
   try {
-    const dataUrl = `data:${file.type};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`;
-    const found = await detect(dataUrl);
+    const image = await readScanImage(req);
+    if ("error" in image) return NextResponse.json({ error: image.error }, { status: image.status });
+    const found = await detect(image.dataUrl);
     if (!found.is_food || !found.items.length)
       return NextResponse.json({ error: "We couldn’t spot any food in that photo. Try a closer, well-lit shot." }, { status: 422 });
 

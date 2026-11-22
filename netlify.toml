@@ -1,0 +1,7 @@
+[build]
+  base = "nutriscan-full-app"
+  command = "npm ci --include=dev && npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
